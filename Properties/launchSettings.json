@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BurningCrusadeMusic": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}
