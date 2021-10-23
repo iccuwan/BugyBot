@@ -6,10 +6,13 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using System.Timers;
 using YoutubeExplode;
+using YoutubeExplode.Common;
 using YoutubeExplode.Videos.Streams;
 
 namespace BurningCrusadeMusic.Services
@@ -77,13 +80,14 @@ namespace BurningCrusadeMusic.Services
 			{
 				playingNow = md;
 				isPlaying = true;
-				channel = (IVoiceChannel)md.context.Channel;
+				channel = channel ?? (md.context.User as IGuildUser)?.VoiceChannel;
 				await JoinToVoiceAsync(channel);
 
 				var video = await youtube.Videos.GetAsync(md.url);
 				var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
 				var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 				var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
+				
 
 				await md.context.Channel.SendMessageAsync($"Играю {video.Title} (Скорость: {Speed} Громкость: {Volume} Реверс: {Reverse})");
 
@@ -122,6 +126,17 @@ namespace BurningCrusadeMusic.Services
 			{
 				Console.WriteLine(e.Message);
 			}
+		}
+
+		private Process CreateStream(string path)
+		{
+			return Process.Start(new ProcessStartInfo
+			{
+				FileName = "ffmpeg",
+				Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
+				UseShellExecute = false,
+				RedirectStandardOutput = true,
+			});
 		}
 
 		public async Task ProcessedNextTrackAsync()
@@ -177,6 +192,33 @@ namespace BurningCrusadeMusic.Services
 		{
 			//audioClient.Dispose();
 			return Task.CompletedTask;
+		}
+
+		public bool IsYoutubeLink(string url)
+		{
+			try
+			{
+				HttpWebRequest request = HttpWebRequest.Create(url) as HttpWebRequest;
+				request.Method = "HEAD";
+				using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+				{
+					return response.ResponseUri.ToString().Contains("youtube.com");
+				}
+			}
+			catch
+			{
+				return false;
+			}
+		}
+
+		public async Task<string> FindYoutube(string request)
+		{
+			var videos = await youtube.Search.GetVideosAsync(request);
+			if (videos[0] == null)
+			{
+				return null;
+			}
+			return videos[0].Id;
 		}
 	}
 	public struct MusicData

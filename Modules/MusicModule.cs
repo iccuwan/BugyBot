@@ -23,10 +23,26 @@ namespace BurningCrusadeMusic.Modules
 			musicService = ms;
 		}
 
-		[Command("play")]
+		[Command("play", RunMode = RunMode.Async)]
 		[Summary("Playing music from youtube url")]
-		public async Task AddToQueryAsync(string url)
+		public async Task AddToQueryAsync([Remainder]string url)
 		{
+			//string url = string.Join(' ', input.ToArray());
+			if (string.IsNullOrWhiteSpace(url))
+			{
+				await ReplyAsync("Ты дебил?");
+				return;
+			}
+			if (!musicService.IsYoutubeLink(url))
+			{
+				await ReplyAsync($"Поиск по запросу {url}");
+				url = await musicService.FindYoutube(url);
+				if (url == null)
+				{
+					await ReplyAsync("Ничего не найдено");
+					return;
+				}
+			}
 			MusicData md = new MusicData
 			{
 				url = url,
