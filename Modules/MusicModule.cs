@@ -72,8 +72,8 @@ namespace BurningCrusadeMusic.Modules
 		[Command("skip")]
 		public async Task Skip()
 		{
-			//await musicService.ProcessedNextTrackAsync();
-			await ReplyAsync("Трек не пропущен");
+			await ReplyAsync("Трек пропущен");
+			await musicService.ProcessedNextTrackAsync();
 		}
 
 		[Command("query")]

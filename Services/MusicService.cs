@@ -6,10 +6,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using YoutubeExplode;
@@ -31,11 +28,13 @@ namespace BurningCrusadeMusic.Services
 		public float Speed { get; set; }
 		public bool Reverse { get; set; }
 		private bool isPlaying = false;
+		private MusicData playingNow;
 
 		private IAudioClient audioClient;
 		private IVoiceChannel channel;
 		private Timer disconnectTimer;
 		private MemoryStream buffer;
+		private AudioOutStream voiceStream;
 
 
 		public MusicService(DiscordSocketClient _discord, CommandService _commands, IConfigurationRoot _config, IServiceProvider _provider)
@@ -60,6 +59,12 @@ namespace BurningCrusadeMusic.Services
 		public async Task AddMusicToQuery(MusicData md)
 		{
 			Query.Add(md);
+			IVoiceChannel _channel = (md.context.User as IGuildUser)?.VoiceChannel;
+			if (_channel == null)
+			{
+				await md.context.Channel.SendMessageAsync("Нужно быть в голосовом канале, чтобы использовать эту команду");
+				return;
+			}
 			if (Query.Count == 1)
 			{
 				await ProcessedNextTrackAsync();
@@ -70,14 +75,9 @@ namespace BurningCrusadeMusic.Services
 		{
 			try
 			{
+				playingNow = md;
 				isPlaying = true;
-				IVoiceChannel _channel = (md.context.User as IGuildUser)?.VoiceChannel;
-				if (_channel == null)
-				{
-					await md.context.Channel.SendMessageAsync("Нужно быть в голосовом канале, чтобы использовать эту команду");
-					return;
-				}
-				channel = _channel;
+				channel = (IVoiceChannel)md.context.Channel;
 				await JoinToVoiceAsync(channel);
 
 				var video = await youtube.Videos.GetAsync(md.url);
@@ -100,23 +100,21 @@ namespace BurningCrusadeMusic.Services
 					.WithStandardOutputPipe(PipeTarget.ToStream(buffer))
 					.ExecuteAsync();
 				await stream.DisposeAsync();
-
-				using (var voiceStream = audioClient.CreatePCMStream(AudioApplication.Mixed))
+				try
 				{
-					try
-					{
-
-						await voiceStream.WriteAsync(buffer.ToArray(), 0, (int)buffer.Length);
-						isPlaying = true;
-					}
-					finally
+					if (voiceStream != null)
 					{
 						await voiceStream.DisposeAsync();
-						buffer.SetLength(0);
-						Query.Remove(md);
-						isPlaying = false;
-						await ProcessedNextTrackAsync();
+						voiceStream = null;
 					}
+					voiceStream = audioClient.CreatePCMStream(AudioApplication.Mixed);
+					await voiceStream.WriteAsync(buffer.ToArray().AsMemory(0, (int)buffer.Length));
+					isPlaying = true;
+				}
+				finally
+				{
+					isPlaying = false;
+					await ProcessedNextTrackAsync();
 				}
 				isPlaying = false;
 			}
@@ -128,6 +126,13 @@ namespace BurningCrusadeMusic.Services
 
 		public async Task ProcessedNextTrackAsync()
 		{
+			if (voiceStream != null)
+			{
+				await voiceStream.DisposeAsync();
+				buffer.SetLength(0);
+				Query.Remove(playingNow);
+				voiceStream = null;
+			}
 			if (Query.Count == 0)
 			{
 				disconnectTimer.Start();
