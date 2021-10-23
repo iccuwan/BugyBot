@@ -87,7 +87,7 @@ namespace BurningCrusadeMusic.Services
 				if (video.Duration > TimeSpan.FromMinutes(10))
 				{
 					await md.context.Channel.SendMessageAsync("Не больше 10 минут пока что");
-					await ProcessedNextTrackAsync();
+					await ProcessedNextTrackAsync(true);
 					return;
 
 				}
@@ -135,9 +135,9 @@ namespace BurningCrusadeMusic.Services
 			}
 		}
 
-		public async Task ProcessedNextTrackAsync()
+		public async Task ProcessedNextTrackAsync(bool skip = false)
 		{
-			if (voiceStream != null)
+			if (voiceStream != null || skip)
 			{
 				await voiceStream.DisposeAsync();
 				buffer.SetLength(0);
