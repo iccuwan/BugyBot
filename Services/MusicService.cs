@@ -84,6 +84,13 @@ namespace BurningCrusadeMusic.Services
 				await JoinToVoiceAsync(channel);
 
 				var video = await youtube.Videos.GetAsync(md.url);
+				if (video.Duration > TimeSpan.FromMinutes(10))
+				{
+					await md.context.Channel.SendMessageAsync("Не больше 10 минут пока что");
+					await ProcessedNextTrackAsync();
+					return;
+
+				}
 				var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
 				var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 				var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
@@ -126,17 +133,6 @@ namespace BurningCrusadeMusic.Services
 			{
 				Console.WriteLine(e.Message);
 			}
-		}
-
-		private Process CreateStream(string path)
-		{
-			return Process.Start(new ProcessStartInfo
-			{
-				FileName = "ffmpeg",
-				Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
-				UseShellExecute = false,
-				RedirectStandardOutput = true,
-			});
 		}
 
 		public async Task ProcessedNextTrackAsync()
