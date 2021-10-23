@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using YoutubeExplode;
 using YoutubeExplode.Common;
+using YoutubeExplode.Search;
 using YoutubeExplode.Videos.Streams;
 
 namespace BurningCrusadeMusic.Services
@@ -210,11 +211,18 @@ namespace BurningCrusadeMusic.Services
 		public async Task<string> FindYoutube(string request)
 		{
 			var videos = await youtube.Search.GetVideosAsync(request);
-			if (videos[0] == null)
+			if (videos.Count == 0)
 			{
 				return null;
 			}
-			return videos[0].Id;
+			foreach (VideoSearchResult video in videos)
+			{
+				if (video.Duration < TimeSpan.FromMinutes(10))
+				{
+					return video.Id;
+				}
+			}
+			return null;
 		}
 	}
 	public struct MusicData
