@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using YoutubeExplode;
@@ -31,14 +32,14 @@ namespace BurningCrusadeMusic.Services
 		public float Volume { get; set; }
 		public float Speed { get; set; }
 		public bool Reverse { get; set; }
-		private bool isPlaying = false;
 		private MusicData playingNow;
 
 		private IAudioClient audioClient;
 		private IVoiceChannel channel;
-		private Timer disconnectTimer;
+		private System.Timers.Timer disconnectTimer;
 		private MemoryStream buffer;
 		private AudioOutStream voiceStream;
+		private CancellationTokenSource cancelTaskToken;
 
 
 		public MusicService(DiscordSocketClient _discord, CommandService _commands, IConfigurationRoot _config, IServiceProvider _provider)
@@ -55,7 +56,7 @@ namespace BurningCrusadeMusic.Services
 			buffer = new MemoryStream();
 			Query = new List<MusicData>();
 
-			disconnectTimer = new Timer(TimeSpan.FromMinutes(5).TotalMilliseconds);
+			disconnectTimer = new System.Timers.Timer(TimeSpan.FromMinutes(5).TotalMilliseconds);
 			disconnectTimer.AutoReset = false;
 			disconnectTimer.Elapsed += DisconnectFromVoice;
 		}
@@ -80,18 +81,10 @@ namespace BurningCrusadeMusic.Services
 			try
 			{
 				playingNow = md;
-				isPlaying = true;
 				channel = channel ?? (md.context.User as IGuildUser)?.VoiceChannel;
 				await JoinToVoiceAsync(channel);
 
 				var video = await youtube.Videos.GetAsync(md.url);
-				if (video.Duration > TimeSpan.FromMinutes(10))
-				{
-					await md.context.Channel.SendMessageAsync("Не больше 10 минут пока что");
-					await ProcessedNextTrackAsync(true);
-					return;
-
-				}
 				var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
 				var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 				var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
@@ -106,29 +99,47 @@ namespace BurningCrusadeMusic.Services
 				}
 				args += " -ac 2 -f s16le -ar 48000 pipe:1";
 
-				await Cli.Wrap("ffmpeg")
-					.WithArguments(args)
-					.WithStandardInputPipe(PipeSource.FromStream(stream))
-					.WithStandardOutputPipe(PipeTarget.ToStream(buffer))
-					.ExecuteAsync();
-				await stream.DisposeAsync();
-				try
+				var info = new ProcessStartInfo
 				{
-					if (voiceStream != null)
-					{
-						await voiceStream.DisposeAsync();
-						voiceStream = null;
-					}
-					voiceStream = audioClient.CreatePCMStream(AudioApplication.Mixed);
-					await voiceStream.WriteAsync(buffer.ToArray().AsMemory(0, (int)buffer.Length));
-					isPlaying = true;
-				}
-				finally
+					FileName = "ffmpeg",
+					Arguments = args,
+					UseShellExecute = false,
+					RedirectStandardInput = true,
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+				};
+				Process ffmpeg = new Process();
+				ffmpeg.StartInfo = info;
+				ffmpeg.EnableRaisingEvents = true;
+				ffmpeg.ErrorDataReceived += Ffmpeg_ErrorDataReceived;
+				ffmpeg.Start();
+				ffmpeg.BeginErrorReadLine();
+
+				if (voiceStream != null)
 				{
-					isPlaying = false;
-					await ProcessedNextTrackAsync();
+					await voiceStream.DisposeAsync();
+					voiceStream = null;
 				}
-				isPlaying = false;
+				voiceStream = audioClient.CreatePCMStream(AudioApplication.Mixed);
+
+				cancelTaskToken = new CancellationTokenSource();
+
+				var inputTask = Task.Run(() =>
+				{						
+					stream.CopyTo(ffmpeg.StandardInput.BaseStream);
+					ffmpeg.StandardInput.Close();
+				}, cancelTaskToken.Token);
+
+				var outputTask = Task.Run(() =>
+				{
+					ffmpeg.StandardOutput.BaseStream.CopyTo(voiceStream);
+				}, cancelTaskToken.Token);
+
+				
+				Task.WaitAll(inputTask, outputTask);
+				ffmpeg.WaitForExit();
+
+				await ProcessedNextTrackAsync();
 			}
 			catch (Exception e)
 			{
@@ -136,10 +147,16 @@ namespace BurningCrusadeMusic.Services
 			}
 		}
 
-		public async Task ProcessedNextTrackAsync(bool skip = false)
+		private void Ffmpeg_ErrorDataReceived(object sender, DataReceivedEventArgs e)
 		{
-			if (voiceStream != null || skip)
+			Console.WriteLine(e.Data);
+		}
+
+		public async Task ProcessedNextTrackAsync()
+		{
+			if (voiceStream != null)
 			{
+				cancelTaskToken.Cancel();
 				await voiceStream.DisposeAsync();
 				buffer.SetLength(0);
 				Query.Remove(playingNow);
@@ -185,9 +202,8 @@ namespace BurningCrusadeMusic.Services
 			}
 		}
 
-		private Task AudioClient_Disconnected(System.Exception arg)
+		private Task AudioClient_Disconnected(Exception arg)
 		{
-			//audioClient.Dispose();
 			return Task.CompletedTask;
 		}
 
@@ -215,14 +231,7 @@ namespace BurningCrusadeMusic.Services
 			{
 				return null;
 			}
-			foreach (VideoSearchResult video in videos)
-			{
-				if (video.Duration < TimeSpan.FromMinutes(10))
-				{
-					return video.Id;
-				}
-			}
-			return null;
+			return videos[0].Id;
 		}
 	}
 	public struct MusicData
