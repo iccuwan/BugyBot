@@ -37,9 +37,9 @@ namespace BurningCrusadeMusic.Services
 		private IAudioClient audioClient;
 		private IVoiceChannel channel;
 		private System.Timers.Timer disconnectTimer;
-		private MemoryStream buffer;
 		private AudioOutStream voiceStream;
 		private CancellationTokenSource cancelTaskToken;
+		private Process ffmpeg;
 
 
 		public MusicService(DiscordSocketClient _discord, CommandService _commands, IConfigurationRoot _config, IServiceProvider _provider)
@@ -53,7 +53,6 @@ namespace BurningCrusadeMusic.Services
 			Speed = 1;
 			Reverse = false;
 
-			buffer = new MemoryStream();
 			Query = new List<MusicData>();
 
 			disconnectTimer = new System.Timers.Timer(TimeSpan.FromMinutes(5).TotalMilliseconds);
@@ -108,12 +107,10 @@ namespace BurningCrusadeMusic.Services
 					RedirectStandardOutput = true,
 					RedirectStandardError = true,
 				};
-				Process ffmpeg = new Process();
+				ffmpeg = new Process();
 				ffmpeg.StartInfo = info;
 				ffmpeg.EnableRaisingEvents = true;
-				ffmpeg.ErrorDataReceived += Ffmpeg_ErrorDataReceived;
 				ffmpeg.Start();
-				ffmpeg.BeginErrorReadLine();
 
 				if (voiceStream != null)
 				{
@@ -124,20 +121,29 @@ namespace BurningCrusadeMusic.Services
 
 				cancelTaskToken = new CancellationTokenSource();
 
-				var inputTask = Task.Run(() =>
-				{						
-					stream.CopyTo(ffmpeg.StandardInput.BaseStream);
-					ffmpeg.StandardInput.Close();
-				}, cancelTaskToken.Token);
-
-				var outputTask = Task.Run(() =>
+				try
 				{
-					ffmpeg.StandardOutput.BaseStream.CopyTo(voiceStream);
-				}, cancelTaskToken.Token);
 
-				
-				Task.WaitAll(inputTask, outputTask);
-				ffmpeg.WaitForExit();
+
+					var inputTask = Task.Run(() =>
+					{
+						stream.CopyTo(ffmpeg.StandardInput.BaseStream);
+						ffmpeg.StandardInput.Close();
+					}, cancelTaskToken.Token);
+
+					var outputTask = Task.Run(() =>
+					{
+						ffmpeg.StandardOutput.BaseStream.CopyTo(voiceStream);
+					}, cancelTaskToken.Token);
+
+
+					Task.WaitAll(inputTask, outputTask);
+					ffmpeg.WaitForExit();
+				}
+				finally
+				{
+					await ProcessedNextTrackAsync();
+				}
 
 				await ProcessedNextTrackAsync();
 			}
@@ -147,20 +153,15 @@ namespace BurningCrusadeMusic.Services
 			}
 		}
 
-		private void Ffmpeg_ErrorDataReceived(object sender, DataReceivedEventArgs e)
-		{
-			Console.WriteLine(e.Data);
-		}
-
 		public async Task ProcessedNextTrackAsync()
 		{
 			if (voiceStream != null)
 			{
 				cancelTaskToken.Cancel();
 				await voiceStream.DisposeAsync();
-				buffer.SetLength(0);
 				Query.Remove(playingNow);
 				voiceStream = null;
+				ffmpeg.Kill();
 			}
 			if (Query.Count == 0)
 			{
