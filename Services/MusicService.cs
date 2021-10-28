@@ -161,7 +161,10 @@ namespace BurningCrusadeMusic.Services
 				await voiceStream.DisposeAsync();
 				Query.Remove(playingNow);
 				voiceStream = null;
-				ffmpeg.Kill();
+				if (!ffmpeg.HasExited)
+				{
+					ffmpeg.Kill();
+				}
 			}
 			if (Query.Count == 0)
 			{
