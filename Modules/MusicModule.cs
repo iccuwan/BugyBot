@@ -114,9 +114,11 @@ namespace BurningCrusadeMusic.Modules
 		public async Task Query()
 		{
 			string response = "Очередь треков\nСейчас играет: ";
+			int i = 0;
 			foreach (MusicData md in musicService.Query)
 			{
-				response += $"{md.url}\n";
+				response += $"{i}:{md.url}\n";
+				i++;
 			}
 			await ReplyAsync(response);
 		}
