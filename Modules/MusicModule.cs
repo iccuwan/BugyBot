@@ -9,6 +9,8 @@ using Discord;
 using YoutubeExplode.Videos.Streams;
 using System.IO;
 using BurningCrusadeMusic.Services;
+using System;
+using System.Web;
 
 namespace BurningCrusadeMusic.Modules
 {
@@ -50,6 +52,22 @@ namespace BurningCrusadeMusic.Modules
 			};
 			_ = musicService.AddMusicToQuery(md);
 			await ReplyAsync("Добавлено в очередь");
+		}
+
+		[Command("playlist", RunMode = RunMode.Async)]
+		public async Task AddPlaylistToQuery(string url)
+		{
+			if (string.IsNullOrEmpty(url) || !musicService.IsYoutubeLink(url))
+			{
+				await ReplyAsync("Ссылка дно");
+				return;
+			}
+			Uri uri = new Uri(url);
+			string playlistId = HttpUtility.ParseQueryString(uri.Query).Get("list");
+			if (playlistId != null)
+			{
+				await musicService.AddPlaylistToQueryAsync(playlistId, Context);
+			}
 		}
 
 		[Command("volume")]

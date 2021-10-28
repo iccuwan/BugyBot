@@ -60,7 +60,7 @@ namespace BurningCrusadeMusic.Services
 			disconnectTimer.Elapsed += DisconnectFromVoice;
 		}
 
-		public async Task AddMusicToQuery(MusicData md)
+		public async Task AddMusicToQuery(MusicData md, bool nextTrack = true)
 		{
 			Query.Add(md);
 			IVoiceChannel _channel = (md.context.User as IGuildUser)?.VoiceChannel;
@@ -69,10 +69,26 @@ namespace BurningCrusadeMusic.Services
 				await md.context.Channel.SendMessageAsync("Нужно быть в голосовом канале, чтобы использовать эту команду");
 				return;
 			}
-			if (Query.Count == 1)
+			if (Query.Count == 1 && nextTrack)
 			{
 				await ProcessedNextTrackAsync();
 			}
+		}
+
+		public async Task AddPlaylistToQueryAsync(string playlistId, SocketCommandContext context)
+		{
+			var videos = await youtube.Playlists.GetVideosAsync(playlistId);
+			foreach(var video in videos)
+			{
+				MusicData md = new MusicData
+				{
+					url = video.Url,
+					context = context
+				};
+				await AddMusicToQuery(md, false);
+			}
+			await context.Channel.SendMessageAsync($"{videos.Count} мелодий добавлено в очередь");
+			await ProcessedNextTrackAsync();
 		}
 
 		private async Task PlayMusic(MusicData md)
