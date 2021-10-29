@@ -32,6 +32,7 @@ namespace BurningCrusadeMusic.Services
 		public float Volume { get; set; }
 		public float Speed { get; set; }
 		public bool Reverse { get; set; }
+		public bool Loop { get; set; }
 		private MusicData playingNow;
 
 		private IAudioClient audioClient;
@@ -52,6 +53,7 @@ namespace BurningCrusadeMusic.Services
 			Volume = 1;
 			Speed = 1;
 			Reverse = false;
+			Loop = false;
 
 			Query = new List<MusicData>();
 
@@ -169,13 +171,16 @@ namespace BurningCrusadeMusic.Services
 			}
 		}
 
-		public async Task ProcessedNextTrackAsync()
+		public async Task ProcessedNextTrackAsync(bool skip = false)
 		{
 			if (voiceStream != null)
 			{
 				cancelTaskToken.Cancel();
 				await voiceStream.DisposeAsync();
-				Query.Remove(playingNow);
+				if (!Loop || skip)
+				{
+					Query.Remove(playingNow);
+				}
 				voiceStream = null;
 				if (!ffmpeg.HasExited)
 				{

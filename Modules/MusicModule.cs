@@ -70,6 +70,14 @@ namespace BurningCrusadeMusic.Modules
 			}
 		}
 
+		[Command("loop")]
+		public Task SetLoop()
+		{
+			musicService.Loop = !musicService.Loop;
+			string reply = musicService.Reverse ? "Повтор музыки включён" : "Повтор музыки выключен";
+			return ReplyAsync(reply);
+		}
+
 		[Command("volume")]
 		public async Task SetVolume(float _volume)
 		{
@@ -107,7 +115,7 @@ namespace BurningCrusadeMusic.Modules
 		public async Task Skip()
 		{
 			await ReplyAsync("Трек пропущен");
-			await musicService.ProcessedNextTrackAsync();
+			await musicService.ProcessedNextTrackAsync(true);
 		}
 
 		[Command("query")]
