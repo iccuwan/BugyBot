@@ -74,7 +74,7 @@ namespace BurningCrusadeMusic.Modules
 		public Task SetLoop()
 		{
 			musicService.Loop = !musicService.Loop;
-			string reply = musicService.Reverse ? "Повтор музыки включён" : "Повтор музыки выключен";
+			string reply = musicService.Loop ? "Повтор музыки включён" : "Повтор музыки выключен";
 			return ReplyAsync(reply);
 		}
 
