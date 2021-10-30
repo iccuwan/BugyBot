@@ -57,6 +57,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=USERNAME
+WorkingDirectory=/home/penguin/bcm
 ExecStart=/home/penguin/bcm/BugyBot
 
 [Install]
