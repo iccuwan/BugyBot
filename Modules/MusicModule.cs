@@ -136,12 +136,12 @@ namespace BugyBot.Modules
 			await musicService.ProcessedNextTrackAsync(true);
 		}
 
-		[Command("query")]
-		public async Task Query()
+		[Command("queue")]
+		public async Task Queue()
 		{
 			string response = local.Phrase("Query");
 			int i = 0;
-			foreach (MusicData md in musicService.Query)
+			foreach (MusicData md in musicService.Queue)
 			{
 				response += $"{i}:{md.url}\n";
 				i++;

@@ -26,7 +26,7 @@ namespace BugyBot.Services
 		private readonly IServiceProvider provider;
 		private readonly LocalizationService local;
 
-		public List<MusicData> Query { get; private set; }
+		public List<MusicData> Queue { get; private set; }
 		private readonly YoutubeClient youtube = new YoutubeClient();
 
 		public float Volume { get; set; }
@@ -56,7 +56,7 @@ namespace BugyBot.Services
 			Reverse = false;
 			Loop = false;
 
-			Query = new List<MusicData>();
+			Queue = new List<MusicData>();
 
 			disconnectTimer = new System.Timers.Timer(TimeSpan.FromMinutes(5).TotalMilliseconds);
 			disconnectTimer.AutoReset = false;
@@ -65,14 +65,14 @@ namespace BugyBot.Services
 
 		public async Task AddMusicToQuery(MusicData md, bool nextTrack = true)
 		{
-			Query.Add(md);
+			Queue.Add(md);
 			IVoiceChannel _channel = (md.context.User as IGuildUser)?.VoiceChannel;
 			if (_channel == null)
 			{
 				await md.context.Channel.SendMessageAsync(local.Phrase("NeedBeInVoice"));
 				return;
 			}
-			if (Query.Count == 1 && nextTrack)
+			if (Queue.Count == 1 && nextTrack)
 			{
 				await ProcessedNextTrackAsync();
 			}
@@ -186,7 +186,7 @@ namespace BugyBot.Services
 				}
 				if (!Loop || skip)
 				{
-					Query.Remove(playingNow);
+					Queue.Remove(playingNow);
 				}
 				voiceStream = null;
 				if (ffmpeg != null && !ffmpeg.HasExited)
@@ -194,7 +194,7 @@ namespace BugyBot.Services
 					ffmpeg.Kill();
 				}
 			}
-			if (Query.Count == 0)
+			if (Queue.Count == 0)
 			{
 				disconnectTimer.Start();
 			}
@@ -204,7 +204,7 @@ namespace BugyBot.Services
 				{
 					disconnectTimer.Stop();
 				}
-				await PlayMusic(Query[0]);
+				await PlayMusic(Queue[0]);
 			}
 		}
 
