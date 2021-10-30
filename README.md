@@ -49,21 +49,17 @@ To avoid this, bot must be started as service.
 ```
 [Unit]
 Description=Bugy Bot
-After=network.target
-StartLimitIntervalSec=0
 
 [Service]
-Type=simple
-Restart=always
-RestartSec=1
-User=USERNAME
+User=penguin
 WorkingDirectory=/home/penguin/bcm
 ExecStart=/home/penguin/bcm/BugyBot
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
-Do not forget to paste the username from which the bot will be started. It must have access to execute the program 
+Do not forget to paste the username and path to directory and executable
 
 Starting bot service
 ```
