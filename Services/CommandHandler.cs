@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System;
 
-namespace BurningCrusadeMusic.Services
+namespace BugyBot.Services
 {
 	public class CommandHandler
 	{

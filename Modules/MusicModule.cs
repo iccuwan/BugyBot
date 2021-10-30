@@ -7,14 +7,14 @@ using YoutubeExplode;
 using Discord;
 using YoutubeExplode.Videos.Streams;
 using System.IO;
-using BurningCrusadeMusic.Services;
+using BugyBot.Services;
 using System;
 using System.Web;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace BurningCrusadeMusic.Modules
+namespace BugyBot.Modules
 {
 	[Name("Music")]
 	[Summary("Playing music")]

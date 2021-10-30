@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace BurningCrusadeMusic.Services
+namespace BugyBot.Services
 {
 	public class LoggingService
 	{

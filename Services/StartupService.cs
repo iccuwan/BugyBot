@@ -6,7 +6,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace BurningCrusadeMusic.Services
+namespace BugyBot.Services
 {
 	public class StartupService
 	{

@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace BurningCrusadeMusic.Services
+namespace BugyBot.Services
 {
 	public class LocalizationService
 	{

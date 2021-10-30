@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
-using BurningCrusadeMusic.Services;
+using BugyBot.Services;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BurningCrusadeMusic
+namespace BugyBot
 {
 	public class Startup
 	{

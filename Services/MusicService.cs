@@ -16,7 +16,7 @@ using YoutubeExplode.Common;
 using YoutubeExplode.Search;
 using YoutubeExplode.Videos.Streams;
 
-namespace BurningCrusadeMusic.Services
+namespace BugyBot.Services
 {
 	public class MusicService
 	{
