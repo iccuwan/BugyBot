@@ -13,6 +13,7 @@ using System;
 using System.Web;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace BurningCrusadeMusic.Modules
 {
@@ -31,12 +32,15 @@ namespace BurningCrusadeMusic.Modules
 		public async Task Restart()
 		{
 			await ReplyAsync("Перезапуск");
-			var info = new ProcessStartInfo
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) // In Linux the service will autorestart app
 			{
-				FileName = Process.GetCurrentProcess().ProcessName
-			};
-			Process.Start(info);
-			Environment.Exit(-1);
+				var info = new ProcessStartInfo
+				{
+					FileName = Process.GetCurrentProcess().ProcessName
+				};
+				Process.Start(info);
+			}
+			Environment.Exit(0);
 		}
 
 		[Command("play", RunMode = RunMode.Async)]
