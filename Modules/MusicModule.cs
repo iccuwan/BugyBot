@@ -11,6 +11,7 @@ using System.IO;
 using BurningCrusadeMusic.Services;
 using System;
 using System.Web;
+using System.Diagnostics;
 
 namespace BurningCrusadeMusic.Modules
 {
@@ -23,6 +24,18 @@ namespace BurningCrusadeMusic.Modules
 		public MusicModule(MusicService ms)
 		{
 			musicService = ms;
+		}
+
+		[Command("restart")]
+		public async Task Restart()
+		{
+			await ReplyAsync("Перезапуск");
+			var info = new ProcessStartInfo
+			{
+				FileName = "BurningCrusadeMusic",
+			};
+			Process.Start(info);
+			Environment.Exit(-1);
 		}
 
 		[Command("play", RunMode = RunMode.Async)]
