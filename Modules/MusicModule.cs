@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using YoutubeExplode;
-using CliWrap;
 using Discord;
 using YoutubeExplode.Videos.Streams;
 using System.IO;
