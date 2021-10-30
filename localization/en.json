@@ -1,0 +1,20 @@
+﻿{
+	"NeedBeInVoice": "Need to be in voice channel to use this command",
+	"PlaylistAdded": "{0} track's added to query'",
+	"TrackAdded": "Added to query",
+	"Playing": "Playing {0} (Speed: {1} Volume: {2} Reverse: {3})",
+	"TrackLoadFailed": "Track playing failed",
+	"Restart": "Restarting",
+	"NotFound": "Not found",
+	"Searching": "Searching {0}",
+	"LoopEnabled": "Loop enabled",
+	"LoopDisabled": "Loop disabled",
+	"Volume": "Volume {0}",
+	"VolumeInvalid": "Value from 0 to 10",
+	"Speed": "Speed {0}",
+	"SpeedInvalid": "Value from 0.5 to 2",
+	"ReverseEnabled": "Track reverse enabled",
+	"ReverseDisabled": "Track reverse disabled",
+	"TrackSkiped": "Track skipped",
+	"Query": "Query:\nPlaying now: "
+}

@@ -21,16 +21,18 @@ namespace BurningCrusadeMusic.Modules
 	public class MusicModule : ModuleBase<SocketCommandContext>
 	{
 		private readonly MusicService musicService;
+		private readonly LocalizationService local;
 
-		public MusicModule(MusicService ms)
+		public MusicModule(MusicService ms, LocalizationService ls)
 		{
 			musicService = ms;
+			local = ls;
 		}
 
 		[Command("restart")] // NOT WORKING IN LINUX SCREEN
 		public async Task Restart()
 		{
-			await ReplyAsync("Перезапуск");
+			await ReplyAsync(local.Phrase("Restart"));
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) // In Linux the service will autorestart app
 			{
 				var info = new ProcessStartInfo
@@ -46,19 +48,18 @@ namespace BurningCrusadeMusic.Modules
 		[Summary("Playing music from youtube url")]
 		public async Task AddToQueryAsync([Remainder]string url)
 		{
-			//string url = string.Join(' ', input.ToArray());
 			if (string.IsNullOrWhiteSpace(url))
 			{
-				await ReplyAsync("Ты дебил?");
+				await ReplyAsync(local.Phrase("NotFound"));
 				return;
 			}
 			if (!musicService.IsYoutubeLink(url))
 			{
-				await ReplyAsync($"Поиск по запросу {url}");
+				await ReplyAsync(string.Format(local.Phrase("Searching"), url));
 				url = await musicService.FindYoutube(url);
 				if (url == null)
 				{
-					await ReplyAsync("Ничего не найдено");
+					await ReplyAsync(local.Phrase("NotFound"));
 					return;
 				}
 			}
@@ -68,7 +69,7 @@ namespace BurningCrusadeMusic.Modules
 				context = Context
 			};
 			_ = musicService.AddMusicToQuery(md);
-			await ReplyAsync("Добавлено в очередь");
+			await ReplyAsync(local.Phrase("TrackAdded"));
 		}
 
 		[Command("playlist", RunMode = RunMode.Async)]
@@ -76,7 +77,7 @@ namespace BurningCrusadeMusic.Modules
 		{
 			if (string.IsNullOrEmpty(url) || !musicService.IsYoutubeLink(url))
 			{
-				await ReplyAsync("Ссылка дно");
+				await ReplyAsync(local.Phrase("NotFound"));
 				return;
 			}
 			Uri uri = new Uri(url);
@@ -91,7 +92,7 @@ namespace BurningCrusadeMusic.Modules
 		public Task SetLoop()
 		{
 			musicService.Loop = !musicService.Loop;
-			string reply = musicService.Loop ? "Повтор музыки включён" : "Повтор музыки выключен";
+			string reply = musicService.Loop ? local.Phrase("LoopEnabled") : local.Phrase("LoopDisabled");
 			return ReplyAsync(reply);
 		}
 
@@ -101,11 +102,11 @@ namespace BurningCrusadeMusic.Modules
 			if (_volume > 0 && _volume <= 10)
 			{
 				musicService.Volume = _volume;
-				await ReplyAsync($"Громкость {_volume}");
+				await ReplyAsync(string.Format(local.Phrase("Volume"), _volume));
 			}
 			else
 			{
-				await ReplyAsync("Можно от 0 до 10");
+				await ReplyAsync(local.Phrase("VolumeInvalid"));
 			}
 		}
 
@@ -115,30 +116,30 @@ namespace BurningCrusadeMusic.Modules
 			if (_speed >= 0.5f && _speed <= 2.0f)
 			{
 				musicService.Speed = _speed;
-				return ReplyAsync($"Скорость {_speed}");
+				return ReplyAsync(string.Format(local.Phrase("Speed"), _speed));
 			}
-			return ReplyAsync("Значение от 0.5 до 2");
+			return ReplyAsync(local.Phrase("SpeedInvalid"));
 		}
 
 		[Command("reverse")]
 		public Task SetReverse()
 		{
 			musicService.Reverse = !musicService.Reverse;
-			string reply = musicService.Reverse ? "Реверс музыки включён" : "Реверс музыки выключен";
+			string reply = musicService.Reverse ? local.Phrase("ReverseEnabled") : local.Phrase("ReverseDisabled");
 			return ReplyAsync(reply);
 		}
 
 		[Command("skip")]
 		public async Task Skip()
 		{
-			await ReplyAsync("Трек пропущен");
+			await ReplyAsync(local.Phrase("TrackSkiped"));
 			await musicService.ProcessedNextTrackAsync(true);
 		}
 
 		[Command("query")]
 		public async Task Query()
 		{
-			string response = "Очередь треков\nСейчас играет: ";
+			string response = local.Phrase("Query");
 			int i = 0;
 			foreach (MusicData md in musicService.Query)
 			{

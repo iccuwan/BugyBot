@@ -35,6 +35,7 @@ namespace BurningCrusadeMusic
 			var provider = services.BuildServiceProvider();
 			provider.GetRequiredService<LoggingService>();
 			provider.GetRequiredService<CommandHandler>();
+			provider.GetRequiredService<LocalizationService>();
 
 			await provider.GetRequiredService<StartupService>().StartAsync();
 			await Task.Delay(-1);
@@ -56,6 +57,7 @@ namespace BurningCrusadeMusic
 			.AddSingleton<StartupService>()
 			.AddSingleton<LoggingService>()
 			.AddSingleton<MusicService>()
+			.AddSingleton<LocalizationService>()
 			.AddSingleton<Random>()
 			.AddSingleton(Configuration);
 		}

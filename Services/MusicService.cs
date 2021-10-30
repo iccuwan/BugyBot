@@ -24,6 +24,7 @@ namespace BurningCrusadeMusic.Services
 		private readonly CommandService commands;
 		private readonly IConfigurationRoot config;
 		private readonly IServiceProvider provider;
+		private readonly LocalizationService local;
 
 		public List<MusicData> Query { get; private set; }
 		private readonly YoutubeClient youtube = new YoutubeClient();
@@ -42,12 +43,13 @@ namespace BurningCrusadeMusic.Services
 		private Process ffmpeg;
 
 
-		public MusicService(DiscordSocketClient _discord, CommandService _commands, IConfigurationRoot _config, IServiceProvider _provider)
+		public MusicService(DiscordSocketClient _discord, CommandService _commands, IConfigurationRoot _config, IServiceProvider _provider, LocalizationService _local)
 		{
 			discord = _discord;
 			commands = _commands;
 			config = _config;
 			provider = _provider;
+			local = _local;
 
 			Volume = 1;
 			Speed = 1;
@@ -67,7 +69,7 @@ namespace BurningCrusadeMusic.Services
 			IVoiceChannel _channel = (md.context.User as IGuildUser)?.VoiceChannel;
 			if (_channel == null)
 			{
-				await md.context.Channel.SendMessageAsync("Нужно быть в голосовом канале, чтобы использовать эту команду");
+				await md.context.Channel.SendMessageAsync(local.Phrase("NeedBeInVoice"));
 				return;
 			}
 			if (Query.Count == 1 && nextTrack)
@@ -88,7 +90,7 @@ namespace BurningCrusadeMusic.Services
 				};
 				await AddMusicToQuery(md, false);
 			}
-			await context.Channel.SendMessageAsync($"{videos.Count} мелодий добавлено в очередь");
+			await context.Channel.SendMessageAsync(string.Format(local.Phrase("PlaylistAdded"), videos.Count));
 			await ProcessedNextTrackAsync();
 		}
 
@@ -106,7 +108,7 @@ namespace BurningCrusadeMusic.Services
 				var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
 				
 
-				await md.context.Channel.SendMessageAsync($"Играю {video.Title} (Скорость: {Speed} Громкость: {Volume} Реверс: {Reverse})");
+				await md.context.Channel.SendMessageAsync(string.Format(local.Phrase("Playing"), video.Title, Speed, Volume, Reverse));
 
 				string args = $" -hide_banner -loglevel panic -i pipe:0 -af volume={Volume} -af atempo={Speed}";
 				if (Reverse)
@@ -165,7 +167,7 @@ namespace BurningCrusadeMusic.Services
 			catch (Exception e)
 			{
 				Console.WriteLine(e.Message);
-				await md.context.Channel.SendMessageAsync("Не удалось проиграть эту мелодию");
+				await md.context.Channel.SendMessageAsync(local.Phrase("TrackLoadFailed"));
 			}
 			finally
 			{
