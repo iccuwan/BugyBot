@@ -160,29 +160,35 @@ namespace BurningCrusadeMusic.Services
 				}
 				finally
 				{
-					await ProcessedNextTrackAsync();
+					
 				}
-
-				await ProcessedNextTrackAsync();
 			}
 			catch (Exception e)
 			{
 				Console.WriteLine(e.Message);
+				await md.context.Channel.SendMessageAsync("Не удалось проиграть эту мелодию");
+			}
+			finally
+			{
+				await ProcessedNextTrackAsync(true);
 			}
 		}
 
 		public async Task ProcessedNextTrackAsync(bool skip = false)
 		{
-			if (voiceStream != null)
+			if (voiceStream != null || skip)
 			{
-				cancelTaskToken.Cancel();
-				await voiceStream.DisposeAsync();
+				if (voiceStream != null)
+				{
+					await voiceStream.DisposeAsync();
+					cancelTaskToken.Cancel();
+				}
 				if (!Loop || skip)
 				{
 					Query.Remove(playingNow);
 				}
 				voiceStream = null;
-				if (!ffmpeg.HasExited)
+				if (ffmpeg != null && !ffmpeg.HasExited)
 				{
 					ffmpeg.Kill();
 				}
