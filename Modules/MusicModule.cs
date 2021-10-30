@@ -12,6 +12,7 @@ using BurningCrusadeMusic.Services;
 using System;
 using System.Web;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace BurningCrusadeMusic.Modules
 {
@@ -32,7 +33,7 @@ namespace BurningCrusadeMusic.Modules
 			await ReplyAsync("Перезапуск");
 			var info = new ProcessStartInfo
 			{
-				FileName = "BurningCrusadeMusic",
+				FileName = Process.GetCurrentProcess().ProcessName
 			};
 			Process.Start(info);
 			Environment.Exit(-1);
