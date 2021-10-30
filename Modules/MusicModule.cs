@@ -27,7 +27,7 @@ namespace BurningCrusadeMusic.Modules
 			musicService = ms;
 		}
 
-		[Command("restart")]
+		[Command("restart")] // NOT WORKING IN LINUX SCREEN
 		public async Task Restart()
 		{
 			await ReplyAsync("Перезапуск");
