@@ -12,6 +12,7 @@ Unstable and poorly written for personal use on a small server
 * Skipping
 * Volume and speed settings (in the form that allows discord and ffmpeg)
 * Reverse (takes a long time to run at the moment)
+* Blacklist
 * Bugs
 * Restart command in case something breaks :)
 
