@@ -3,6 +3,8 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace BugyBot.Services
 {
@@ -13,6 +15,8 @@ namespace BugyBot.Services
 		private readonly IConfigurationRoot config;
 		private readonly IServiceProvider provider;
 
+		private List<ulong> blacklist;
+
 		public CommandHandler(DiscordSocketClient _discord, CommandService _commands, IConfigurationRoot _config, IServiceProvider _provider)
 		{
 			discord = _discord;
@@ -21,6 +25,20 @@ namespace BugyBot.Services
 			provider = _provider;
 
 			discord.MessageReceived += OnMessageReceivedAsync;
+
+			blacklist = new List<ulong>();
+			string blacklistPath = "config/blacklist.txt";
+			if (File.Exists(blacklistPath))
+			{
+				string[] ids = File.ReadAllLines(blacklistPath);
+				foreach(string id in ids)
+				{
+					if (!id.StartsWith('#'))
+					{
+						blacklist.Add(Convert.ToUInt64(id));
+					}
+				}
+			}
 		}
 
 		private async Task OnMessageReceivedAsync(SocketMessage s)
@@ -32,7 +50,7 @@ namespace BugyBot.Services
 			var context = new SocketCommandContext(discord, msg);
 
 			int argPos = 0;
-			if (msg.HasStringPrefix(config["prefix"], ref argPos) || msg.HasMentionPrefix(discord.CurrentUser, ref argPos))
+			if (!blacklist.Contains(context.User.Id) && (msg.HasStringPrefix(config["prefix"], ref argPos) || msg.HasMentionPrefix(discord.CurrentUser, ref argPos)))
 			{
 				var result = await commands.ExecuteAsync(context, argPos, provider);
 

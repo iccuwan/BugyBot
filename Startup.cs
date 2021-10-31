@@ -17,7 +17,7 @@ namespace BugyBot
 		{
 			var builder = new ConfigurationBuilder()
 				.SetBasePath(AppContext.BaseDirectory)
-				.AddYamlFile("config.yml");
+				.AddYamlFile("config/config.yml");
 			Configuration = builder.Build();
 		}
 

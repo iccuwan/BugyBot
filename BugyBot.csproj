@@ -19,8 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="config.yml">
+    <None Update="config\config.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="config\blacklist.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="ffmpeg.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
