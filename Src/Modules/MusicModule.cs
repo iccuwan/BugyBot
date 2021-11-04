@@ -139,7 +139,7 @@ namespace BugyBot.Modules
 		[Command("queue")]
 		public async Task Queue()
 		{
-			string response = local.Phrase("Query");
+			string response = local.Phrase("Queue");
 			int i = 0;
 			foreach (MusicData md in musicService.Queue)
 			{

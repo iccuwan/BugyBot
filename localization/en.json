@@ -16,5 +16,5 @@
 	"ReverseEnabled": "Track reverse enabled",
 	"ReverseDisabled": "Track reverse disabled",
 	"TrackSkiped": "Track skipped",
-	"Query": "Query:\nPlaying now: "
+	"Queue": "Queue:\nPlaying now: "
 }
