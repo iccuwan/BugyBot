@@ -98,71 +98,15 @@ namespace BugyBot.Services
 		{
 			try
 			{
-				playingNow = md;
-				channel = channel ?? (md.context.User as IGuildUser)?.VoiceChannel;
-				await JoinToVoiceAsync(channel);
 
 				var video = await youtube.Videos.GetAsync(md.url);
 				var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
 				var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 				var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
-				
 
 				await md.context.Channel.SendMessageAsync(string.Format(local.Phrase("Playing"), video.Title, Speed, Volume, Reverse));
 
-				string args = $" -hide_banner -loglevel panic -i pipe:0 -af volume={Volume} -af atempo={Speed}";
-				if (Reverse)
-				{
-					args += " -af areverse";
-				}
-				args += " -ac 2 -f s16le -ar 48000 pipe:1";
-
-				var info = new ProcessStartInfo
-				{
-					FileName = "ffmpeg",
-					Arguments = args,
-					UseShellExecute = false,
-					RedirectStandardInput = true,
-					RedirectStandardOutput = true,
-					RedirectStandardError = true,
-				};
-				ffmpeg = new Process();
-				ffmpeg.StartInfo = info;
-				ffmpeg.EnableRaisingEvents = true;
-				ffmpeg.Start();
-
-				if (voiceStream != null)
-				{
-					await voiceStream.DisposeAsync();
-					voiceStream = null;
-				}
-				voiceStream = audioClient.CreatePCMStream(AudioApplication.Mixed);
-
-				cancelTaskToken = new CancellationTokenSource();
-
-				try
-				{
-
-
-					var inputTask = Task.Run(() =>
-					{
-						stream.CopyTo(ffmpeg.StandardInput.BaseStream);
-						ffmpeg.StandardInput.Close();
-					}, cancelTaskToken.Token);
-
-					var outputTask = Task.Run(() =>
-					{
-						ffmpeg.StandardOutput.BaseStream.CopyTo(voiceStream);
-					}, cancelTaskToken.Token);
-
-
-					Task.WaitAll(inputTask, outputTask);
-					ffmpeg.WaitForExit();
-				}
-				finally
-				{
-					
-				}
+				await SendVoiceAsync(stream, md);
 			}
 			catch (Exception e)
 			{
@@ -173,6 +117,83 @@ namespace BugyBot.Services
 			{
 				await ProcessedNextTrackAsync(true);
 			}
+		}
+
+		private async Task PlayTTS(MusicData md)
+		{
+			try
+			{
+				string args = "-o rhvoice -l ru -e -t male1";
+				var info = new ProcessStartInfo
+				{
+					FileName = "spd-say",
+					Arguments = args,
+					RedirectStandardOutput = true,
+					RedirectStandardInput = true
+				};
+				Process spd = new Process();
+				spd.StartInfo = info;
+				spd.Start();
+				spd.StandardInput.Write(md.url);
+				spd.StandardInput.Close();
+				await SendVoiceAsync(spd.StandardOutput.BaseStream, md);
+			}
+			catch (Exception e)
+			{
+
+			}
+		}
+
+		public async Task SendVoiceAsync(Stream stream, MusicData md)
+		{
+			playingNow = md;
+			channel = channel ?? (md.context.User as IGuildUser)?.VoiceChannel;
+			await JoinToVoiceAsync(channel);
+
+
+			string args = $" -hide_banner -loglevel panic -i pipe:0 -af volume={Volume} -af atempo={Speed}";
+			if (Reverse)
+			{
+				args += " -af areverse";
+			}
+			args += " -ac 2 -f s16le -ar 48000 pipe:1";
+
+			var info = new ProcessStartInfo
+			{
+				FileName = "ffmpeg",
+				Arguments = args,
+				UseShellExecute = false,
+				RedirectStandardInput = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+			};
+			ffmpeg = new Process();
+			ffmpeg.StartInfo = info;
+			ffmpeg.EnableRaisingEvents = true;
+			ffmpeg.Start();
+
+			if (voiceStream != null)
+			{
+				await voiceStream.DisposeAsync();
+				voiceStream = null;
+			}
+			voiceStream = audioClient.CreatePCMStream(AudioApplication.Mixed);
+
+			cancelTaskToken = new CancellationTokenSource();
+
+			var inputTask = Task.Run(() =>
+			{
+				stream.CopyTo(ffmpeg.StandardInput.BaseStream);
+				ffmpeg.StandardInput.Close();
+			}, cancelTaskToken.Token);
+
+			var outputTask = Task.Run(() =>
+			{
+				ffmpeg.StandardOutput.BaseStream.CopyTo(voiceStream);
+			}, cancelTaskToken.Token);
+
+			Task.WaitAll(inputTask, outputTask);
+			ffmpeg.WaitForExit();
 		}
 
 		public async Task ProcessedNextTrackAsync(bool skip = false)
@@ -204,7 +225,16 @@ namespace BugyBot.Services
 				{
 					disconnectTimer.Stop();
 				}
-				await PlayMusic(Queue[0]);
+
+				switch(Queue[0].type)
+				{
+					case VoiceType.YOUTUBE:
+						await PlayMusic(Queue[0]);
+						break;
+					case VoiceType.TTS:
+						await PlayTTS(Queue[0]);
+						break;
+				}
 			}
 		}
 
@@ -269,6 +299,13 @@ namespace BugyBot.Services
 	public struct MusicData
 	{
 		public string url;
+		public VoiceType type;
 		public SocketCommandContext context;
+	}
+
+	public enum VoiceType
+	{
+		YOUTUBE,
+		TTS
 	}
 }

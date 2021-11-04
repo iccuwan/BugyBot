@@ -66,10 +66,24 @@ namespace BugyBot.Modules
 			MusicData md = new MusicData
 			{
 				url = url,
+				type = VoiceType.YOUTUBE,
 				context = Context
 			};
 			_ = musicService.AddMusicToQuery(md);
 			await ReplyAsync(local.Phrase("TrackAdded"));
+		}
+
+		[Command("s", RunMode = RunMode.Async)]
+		public async Task AddTTSToQueue(string text)
+		{
+			MusicData md = new MusicData
+			{
+				url = text,
+				type = VoiceType.TTS,
+				context = Context
+			};
+			await ReplyAsync(local.Phrase("TrackAdded"));
+			await musicService.AddMusicToQuery(md);
 		}
 
 		[Command("playlist", RunMode = RunMode.Async)]
