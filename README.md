@@ -1,5 +1,5 @@
 # BugyBot
-Simple discord music bot that works with [youtube-explode](https://github.com/Tyrrrz/YoutubeExplode) and ffmpeg. Written in .NET 5
+Simple discord music bot that works with [youtube-explode](https://github.com/Tyrrrz/YoutubeExplode) and ffmpeg. Written in .NET 6
 
 Stable for use on a small server
 
